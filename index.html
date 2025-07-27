@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Arm Control Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .motor-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .motor-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .motor-control label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .motor-control input {
+            width: 80px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.reset {
+            background-color: #f44336;
+        }
+        button.reset:hover {
+            background-color: #d32f2f;
+        }
+        button.save {
+            background-color: #2196F3;
+        }
+        button.save:hover {
+            background-color: #0b7dda;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .action-cell {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .run-btn {
+            background-color: #4CAF50;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Robot Arm Control Panel</h1>
+        
+        <div class="motor-controls">
+            <div class="motor-control">
+                <label for="motor1">Motor 1:</label>
+                <input type="number" id="motor1" min="0" max="180" value="90">
+            </div>
+            <div class="motor-control">
+                <label for="motor2">Motor 2:</label>
+                <input type="number" id="motor2" min="0" max="180" value="90">
+            </div>
+            <div class="motor-control">
+                <label for="motor3">Motor 3:</label>
+                <input type="number" id="motor3" min="0" max="180" value="90">
+            </div>
+            <div class="motor-control">
+                <label for="motor4">Motor 4:</label>
+                <input type="number" id="motor4" min="0" max="180" value="90">
+            </div>
+            <div class="motor-control">
+                <label for="motor5">Motor 5:</label>
+                <input type="number" id="motor5" min="0" max="180" value="90">
+            </div>
+            <div class="motor-control">
+                <label for="motor6">Motor 6:</label>
+                <input type="number" id="motor6" min="0" max="180" value="90">
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button class="reset" onclick="resetMotors()">Reset</button>
+            <button class="save" onclick="savePose()">Save Pose</button>
+            <button class="run" onclick="runMotors()">Run</button>
+        </div>
+        
+        <table id="posesTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Motor 1</th>
+                    <th>Motor 2</th>
+                    <th>Motor 3</th>
+                    <th>Motor 4</th>
+                    <th>Motor 5</th>
+                    <th>Motor 6</th>
+                    <th>Action</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Poses will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Load saved poses when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedPoses();
+        });
+
+        // Reset all motors to 90 degrees
+        function resetMotors() {
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById(`motor${i}`).value = 90;
+            }
+        }
+
+        // Save current motor positions as a new pose
+        function savePose() {
+            const poseName = prompt("Enter a name for this pose:");
+            if (!poseName) return;
+
+            const motors = {};
+            for (let i = 1; i <= 6; i++) {
+                motors[`motor${i}`] = document.getElementById(`motor${i}`).value;
+            }
+
+            const action = prompt("Enter an action for this pose (optional):", "Load Remove");
+
+            fetch('save_pose.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: poseName,
+                    ...motors,
+                    action: action || ''
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Pose saved successfully!");
+                    loadSavedPoses();
+                } else {
+                    alert("Error saving pose: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Error saving pose");
+            });
+        }
+
+        // Run current motor positions
+        function runMotors() {
+            const motors = {};
+            for (let i = 1; i <= 6; i++) {
+                motors[`motor${i}`] = document.getElementById(`motor${i}`).value;
+            }
+
+            fetch('save_position.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(motors)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Motor positions sent successfully!");
+                } else {
+                    alert("Error sending motor positions: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Error sending motor positions");
+            });
+        }
+
+        // Load saved poses from server
+        function loadSavedPoses() {
+            fetch('get_poses.php')
+                .then(response => response.json())
+                .then(poses => {
+                    const tableBody = document.querySelector('#posesTable tbody');
+                    tableBody.innerHTML = '';
+
+                    poses.forEach((pose, index) => {
+                        const row = document.createElement('tr');
+                        
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${pose.motor1}</td>
+                            <td>${pose.motor2}</td>
+                            <td>${pose.motor3}</td>
+                            <td>${pose.motor4}</td>
+                            <td>${pose.motor5}</td>
+                            <td>${pose.motor6}</td>
+                            <td>${pose.action || ''}</td>
+                            <td class="action-cell">
+                                <button class="action-btn run-btn" onclick="loadPose(${pose.id})">Run</button>
+                                <button class="action-btn delete-btn" onclick="deletePose(${pose.id})">Delete</button>
+                            </td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading poses:', error);
+                });
+        }
+
+        // Load a saved pose into the motor controls
+        function loadPose(poseId) {
+            fetch(`get_pose.php?id=${poseId}`)
+                .then(response => response.json())
+                .then(pose => {
+                    for (let i = 1; i <= 6; i++) {
+                        document.getElementById(`motor${i}`).value = pose[`motor${i}`];
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading pose:', error);
+                    alert("Error loading pose");
+                });
+        }
+
+        // Delete a saved pose
+        function deletePose(poseId) {
+            if (confirm("Are you sure you want to delete this pose?")) {
+                fetch(`delete_pose.php?id=${poseId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        loadSavedPoses();
+                    } else {
+                        alert("Error deleting pose: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("Error deleting pose");
+                });
+            }
+        }
+    </script>
+</body>
+</html>
