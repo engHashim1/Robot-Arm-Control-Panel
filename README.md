@@ -40,7 +40,6 @@ Setup Steps
     Clone the repository:
     bash
 
-git clone https://github.com/yourusername/robot-arm-control.git
 
 Database Setup:
 
